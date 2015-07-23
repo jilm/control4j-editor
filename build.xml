@@ -1,0 +1,114 @@
+<?xml version="1.0"?>
+<project name="editor" basedir="." default="compile">
+
+    <description>
+        This build file is used to compile the tools.
+    </description>
+
+    <!-- Name of the software to build -->
+    <property name="sw.name" value="lidinsky-editor" />
+
+    <property name="srcdir" location="src" />
+    <property name="bindir" location="bin" />
+    <property name="docdir" location="doc" />
+    <property name="testsrcdir" location="test" />
+    <property name="reports" location="reports" />
+    <property name="jarname" value="${sw.name}.jar" />
+
+    <target name="init">
+        <tstamp />
+    </target>
+
+    <target name="clean" depends="init"
+            description="Removes all except source code directory.">
+        <delete dir="${bindir}" />
+        <delete dir="${docdir}" />
+        <delete dir="${reports}" />
+    </target>
+
+    <target name="compile" depends="init"
+            description="Compiles the application">
+        <mkdir dir="${bindir}" />
+        <depend srcdir="${srcdir}" destdir="${bindir}" />
+        <javac srcdir="${srcdir}" destdir="${bindir}"
+            deprecation="no"
+            classpath="depend/control4j.jar:depend/lidinsky-tools.jar:depend/commons-collections.jar:depend/commons-lang.jar"
+            />
+        <copy file="${srcdir}/cz/lidinsky/editor/setting.properties"
+              todir="${bindir}/cz/lidinsky/editor/" />
+    </target>
+
+    <target name="test" depends="compile" >
+        <javac srcdir="${testsrcdir}" destdir="${bindir}"
+            />
+        <mkdir dir="${reports}" />
+        <junit printsummary="yes" haltonfailure="yes">
+            <classpath>
+                <pathelement location="${bindir}" />
+                <pathelement path="${java.class.path}" />
+                <pathelement path="depend/control4j.jar:lidinsky-tools.jar:depend/commons-collections.jar" />
+            </classpath>
+            <formatter type="plain" />
+            <batchtest fork="yes" todir="${reports}">
+                <fileset dir="${testsrcdir}">
+        	    <include name="**/*Test.java" />
+        	</fileset>
+            </batchtest>
+        </junit>
+    </target>
+
+    <target name="doc" description="Generates documentation.">
+        <javadoc destdir="${docdir}" access="package" >
+            <fileset dir="${srcdir}">
+                <include name="**/*.java" />
+            </fileset>
+            <classpath>
+                <pathelement path="depend/control4j.jar:depend/lidinsky-tools.jar:depend/commons-collections.jar" />
+            </classpath>
+        </javadoc>
+    </target>
+
+    <target name="pack">
+        <zip destfile="control4j.zip">
+            <fileset dir="${srcdir}"  />
+        </zip>
+    </target>
+
+    <target name="unpack">
+        <delete dir="${srcdir}" />
+        <!--<delete dir="conf" />-->
+        <unzip src="control4j.zip" dest="." />
+        <fixcrlf srcdir="${srcdir}" />
+        <!--<fixcrlf srcdir="conf" />-->
+    </target>
+
+    <target name="jar" depends="compile, init"
+            description="Creates a JAR file.">
+            <jar destfile="${jarname}">
+            <fileset dir="${bindir}" />
+            <!--
+            <manifest >
+                <attribute name="Main-Class" value="control4j.Control" />
+        	<section name="common">
+        	    <attribute name="Implementation-Version"
+        		       value="${sw.version}" />
+        	</section>
+            </manifest>
+            -->
+        </jar>
+    </target>
+
+    <!-- Takes a hash of the last commit from git repository -->
+    <target name="version" depends="init" >
+        <exec executable="git"
+              outputproperty="sw.version"
+              resultproperty="git.result"
+              failifexecutionfails="false" >
+            <arg line="log --pretty=format:%H -n 1" />
+        </exec>
+        <property name="sw.version" value="?" />
+        <echo>${sw.version}</echo>
+    </target>
+
+</project>
+
