@@ -62,8 +62,6 @@ public class DataModel {
       if (getJC(parent) != null) {
         getJC(parent).add(createVisualComponent(child));
         configureVisualComponent(child);
-        // put a link from visual component to node
-        getJC(child).putClientProperty(LINK_KEY, child);
       }
     } catch (ClassCastException e) {
       // it is ok. Component is not a visual one.
@@ -78,11 +76,41 @@ public class DataModel {
   }
 
   protected void check(GuiObject parent, GuiObject child) {
-    if (!parent.isVisual()) {
-      throw new IllegalArgumentException();
-    } else if (!parent.isVisualContainer() && child.isVisual()) {
+    if (!parent.isAssignable(child)) {
       throw new IllegalArgumentException();
     }
+  }
+
+  public void insertChild(
+      Node<GuiObject> parent, Node<GuiObject> child, int index) {
+
+    // check that the parent is a node of this tree
+    if (parent.getRoot() != root) {
+      throw new IllegalArgumentException();
+    }
+    // add a child into the data structure
+    GuiObject parentObject = parent.getDecorated();
+    GuiObject childObject = child.getDecorated();
+    check(parentObject, childObject);
+    ((ChangeableNode<GuiObject>)parent).insertChild(child, index);
+    // create visual representation
+    try {
+      if (getJC(parent) != null) {
+        getJC(parent).add(createVisualComponent(child));
+        configureVisualComponent(child);
+      }
+    } catch (ClassCastException e) {
+      // it is ok. Component is not a visual one.
+    }
+  }
+
+  public Node<GuiObject> insertChild(
+      Node<GuiObject> parent, GuiObject child, int index) {
+
+    ChangeableNode<GuiObject> childNode = new ChangeableNode<GuiObject>();
+    childNode.setDecorated(child);
+    insertChild(parent, childNode, index);
+    return childNode;
   }
 
   //--------------------------------------------------------------- Remove Node
@@ -102,7 +130,9 @@ public class DataModel {
 
   public JComponent createRootVisualComponent() {
     if (getJC(root) == null) {
-      return getVO(root).createVisualComponent();
+      JComponent component = getVO(root).createVisualComponent();
+      component.putClientProperty(LINK_KEY, root);
+      return component;
     } else {
       return getJC(root);
     }
@@ -126,7 +156,9 @@ public class DataModel {
 
   protected JComponent createVisualComponent(Node<GuiObject> node) {
     if (getJC(node) == null) {
-      return getVO(node).createVisualComponent();
+      JComponent component = getVO(node).createVisualComponent();
+      component.putClientProperty(LINK_KEY, node);
+      return component;
     } else {
       throw new IllegalStateException();
     }

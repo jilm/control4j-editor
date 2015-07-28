@@ -31,7 +31,6 @@ import javax.swing.JFrame;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 
-import control4j.gui.Writer;
 import control4j.gui.Screens;
 
 import cz.lidinsky.tools.xml.XMLReader;
@@ -116,7 +115,7 @@ implements FileEvent, DataListener, TreeModelListener
       reader.load(file);
       //reader.close();
       this.file = file;
-    } catch (java.io.IOException e) {
+    } catch (Exception e) {
       this.file = null;
       throw e;
     }
@@ -133,7 +132,7 @@ implements FileEvent, DataListener, TreeModelListener
     try {
       java.io.OutputStream os = new java.io.FileOutputStream(file);
       Writer writer = new Writer();
-      writer.write(screens, os);
+      writer.write(Editor.getDataModel().getRoot(), os);
       hasChanged = false;
       this.file = file;
     } catch (java.io.FileNotFoundException ex) {

@@ -35,13 +35,14 @@ import control4j.gui.VisualObject;
 import control4j.gui.VisualContainer;
 import control4j.gui.components.Screen;
 
+import cz.lidinsky.tools.tree.Node;
+
 /**
  *
  *  Data transfer support for the objects in the tree panel.
  *
  */
-class TreeTransferHandler extends javax.swing.TransferHandler
-{
+class TreeTransferHandler extends javax.swing.TransferHandler {
 
   /**
    *  Array of supported flavors.
@@ -52,21 +53,18 @@ class TreeTransferHandler extends javax.swing.TransferHandler
    *  Source object of the drag and drop. This means the object that was
    *  draged, copyed, cutted, ...
    */
-  private GuiObject sourceObject;
+  private Node<GuiObject> sourceObject;
 
   /**
    *  Initialize the array of supported flavors.
    */
-  public TreeTransferHandler()
-  {
-    try
-    {
+  public TreeTransferHandler() {
+    try {
       supportedFlavors = new DataFlavor[1];
-      supportedFlavors[0] = new DataFlavor(DataFlavor.javaJVMLocalObjectMimeType
-	+ ";class=control4j.gui.GuiObject");
-    }
-    catch (ClassNotFoundException e)
-    {
+      supportedFlavors[0]
+        = new DataFlavor(DataFlavor.javaJVMLocalObjectMimeType
+            + ";class=cz.lidinsky.tools.tree.Node");
+    } catch (ClassNotFoundException e) {
       supportedFlavors = null;
     }
   }
@@ -75,29 +73,29 @@ class TreeTransferHandler extends javax.swing.TransferHandler
    *
    */
   @Override
-  public boolean canImport(javax.swing.TransferHandler.TransferSupport support)
-  {
-    if (support == null)
+  public boolean canImport(
+      javax.swing.TransferHandler.TransferSupport support) {
+
+    if (support == null) {
       throw new NullPointerException();
-    if (support.isDataFlavorSupported(supportedFlavors[0]))
+    }
+    if (support.isDataFlavorSupported(supportedFlavors[0])) {
       return true;
-    else
+    } else {
       return false;
+    }
   }
 
   /**
    *
    */
   @Override
-  protected Transferable createTransferable(JComponent c)
-  {
-    JTree tree = (JTree)c;
-    if (tree.getSelectionCount() == 0)
+  protected Transferable createTransferable(JComponent c) {
+    Tree tree = (Tree)c;
+    if (tree.getSelectionCount() == 0) {
       return null;
-    else
-    {
-      TreePath selection = tree.getLeadSelectionPath();
-      sourceObject = (GuiObject)selection.getLastPathComponent();
+    } else {
+      sourceObject = tree.getSelectedNode();
       return new TreeTransferable(sourceObject);
     }
   }
@@ -106,8 +104,7 @@ class TreeTransferHandler extends javax.swing.TransferHandler
    *
    */
   @Override
-  public void exportAsDrag(JComponent comp, InputEvent e, int action)
-  {
+  public void exportAsDrag(JComponent comp, InputEvent e, int action) {
     super.exportAsDrag(comp, e, action);
   }
 
@@ -115,8 +112,7 @@ class TreeTransferHandler extends javax.swing.TransferHandler
    *
    */
   @Override
-  public void exportToClipboard(JComponent comp, Clipboard clip, int action)
-  {
+  public void exportToClipboard(JComponent comp, Clipboard clip, int action) {
     super.exportToClipboard(comp, clip, action);
   }
 
@@ -124,16 +120,9 @@ class TreeTransferHandler extends javax.swing.TransferHandler
    *  Remove data that was transferred.
    */
   @Override
-  protected void exportDone(JComponent source, Transferable data, int action)
-  {
-    if (action == MOVE)
-    {
-      GuiObject parent = sourceObject.getParent();
-      int index = parent.getIndexOfChild(sourceObject);
-      parent.removeChild(index);
-      JTree tree = (JTree)source;
-      TreeModel treeModel = (TreeModel)tree.getModel();
-      //treeModel.fireTreeNodeRemoved(parent, sourceObject, index);
+  protected void exportDone(JComponent source, Transferable data, int action) {
+    if (action == MOVE) {
+      Editor.getDataModel().removeNode(sourceObject);
     }
     sourceObject = null;
   }
@@ -142,8 +131,7 @@ class TreeTransferHandler extends javax.swing.TransferHandler
    *
    */
   @Override
-  public int getSourceActions(JComponent c)
-  {
+  public int getSourceActions(JComponent c) {
     return COPY | MOVE;
   }
 
@@ -151,100 +139,62 @@ class TreeTransferHandler extends javax.swing.TransferHandler
    *
    */
   @Override
-  public boolean importData(TransferHandler.TransferSupport support)
-  {
+  public boolean importData(TransferHandler.TransferSupport support) {
+
     if (support == null) throw new NullPointerException();
-    if (canImport(support))
-    {
+    if (canImport(support)) {
       // get a place where the data should be imported
       JTree tree = (JTree)support.getComponent();
       TreeModel treeModel = (TreeModel)tree.getModel();
       TreePath targetPath;
-      if (support.isDrop())
+      if (support.isDrop()) {
         targetPath = tree.getDropLocation().getPath();
-      else
-	targetPath = tree.getLeadSelectionPath();
-      // get a data to import
-      try
-      {
-        GuiObject sourceObject = (GuiObject)support.getTransferable()
-	  .getTransferData(supportedFlavors[0]);
-	GuiObject targetObject = (GuiObject)targetPath.getLastPathComponent();
-	if (sourceObject instanceof Screens)
-	{
-	  // root element can not be moved or copied
-	  return false;
-	}
-	else if (sourceObject instanceof Screen)
-	{
-	  // only root element can hold screen object
-	  // so, if the target path is another screen, place source here
-	  if (targetObject instanceof Screen)
-	  {
-	    Screens root = (Screens)targetObject.getParent();
-	    int index = root.getIndexOfChild(targetObject);
-	    Screen clone = (Screen)sourceObject.clone(true);
-	    root.insert(clone, index);
-            //treeModel.fireTreeNodeInserted(clone);
-	    return true;
-	  }
-          // if the target is root, place screen at the end
-	  else if(targetObject instanceof Screens)
-	  {
-	    Screens root = (Screens)targetObject.getParent();
-	    Screen clone = (Screen)sourceObject.clone(true);
-	    root.add(clone);
-	    //treeModel.fireTreeNodeInserted(clone);
-	    return true;
-	  }
-	  // else do nothing
-	  else
-	  {
-	    return false;
-	  }
-	}
-	// component -> panel
-	else if (sourceObject.isVisual() && targetObject.isVisualContainer())
-	{
-	  VisualObject clone = (VisualObject)sourceObject.clone(true);
-	  ((VisualContainer)targetObject).add(clone);
-	  //treeModel.fireTreeNodeInserted(clone);
-	  return true;
-	}
-	// Component at the position of another component
-	else if (sourceObject.isVisual() && targetObject.isVisual())
-	{
-	  VisualObject clone = (VisualObject)sourceObject.clone(true);
-	  VisualContainer parent = (VisualContainer)targetObject.getParent();
-	  int index = parent.getIndexOfChild(targetObject);
-          parent.insert(clone, index);
-	  //treeModel.fireTreeNodeInserted(clone);
-	  return true;
-	}
-	// Changer -> changeble
-	else if (!sourceObject.isVisual() && targetObject.isVisual())
-        {
-	  Changer clone = (Changer)sourceObject.clone(true);
-	  ((VisualObject)targetObject).add(clone);
-	  //treeModel.fireTreeNodeInserted(clone);
-	  return true;
-	}
-	else
-	{
-	  return false;
-	}
+      } else {
+        targetPath = tree.getLeadSelectionPath();
+      }
+      // insert object
+      try {
+        // get a data to import
+        Node<GuiObject> sourceNode
+          = (Node<GuiObject>)support.getTransferable()
+          .getTransferData(supportedFlavors[0]);
+        GuiObject sourceObject = sourceNode.getDecorated();
+        Node<GuiObject> targetNode
+          = (Node<GuiObject>)targetPath.getLastPathComponent();
+        GuiObject targetObject = targetNode.getDecorated();
 
+        if (sourceNode.isRoot()) {
+          // root element can not be moved or copied
+          return false;
+        } else if (targetObject.isAssignable(sourceObject)) {
+          GuiObject clone = sourceObject.clone(true);
+          Editor.getDataModel().addChild(targetNode, clone);
+          return true;
+        } else if (!sourceObject.isVisual() && !targetObject.isVisual()) {
+          GuiObject clone = sourceObject.clone(true);
+          Node<GuiObject> parentNode = targetNode.getParent();
+          int index = parentNode.getIndexOfChild(targetNode);
+          Editor.getDataModel().insertChild(parentNode, clone, index);
+          return true;
+        } else if (!sourceObject.isVisualContainer()
+            && targetObject.isVisual()) {
+          GuiObject clone = sourceObject.clone(true);
+          Node<GuiObject> parentNode = targetNode.getParent();
+          int index = parentNode.getIndexOfChild(targetNode);
+          Editor.getDataModel().insertChild(parentNode, clone, index);
+          return true;
+        } else {
+          // the source object is not assignable to the target object
+          return false;
+        }
+
+      } catch (java.awt.datatransfer.UnsupportedFlavorException e) {
+      } catch (java.io.IOException e) {
       }
-      catch (java.awt.datatransfer.UnsupportedFlavorException e)
-      {
-      }
-      catch (java.io.IOException e)
-      {
-      }
+      return false;
+    } else {
       return false;
     }
-    else
-      return false;
   }
 
 
@@ -257,43 +207,39 @@ class TreeTransferHandler extends javax.swing.TransferHandler
     /**
      *
      */
-    private GuiObject data;
+    private Node<GuiObject> data;
 
     /**
      *
      */
-    TreeTransferable(GuiObject data)
-    {
+    TreeTransferable(Node<GuiObject> data) {
       this.data = data;
     }
 
     /**
      *
      */
-    public DataFlavor[] getTransferDataFlavors()
-    {
+    public DataFlavor[] getTransferDataFlavors() {
       return supportedFlavors;
     }
 
     /**
      *
      */
-    public boolean isDataFlavorSupported(DataFlavor flavor)
-    {
+    public boolean isDataFlavorSupported(DataFlavor flavor) {
       if (supportedFlavors[0].equals(flavor))
-	return true;
+        return true;
       else
-	return false;
+        return false;
     }
 
     /**
      *
      */
-    public Object getTransferData(DataFlavor flavor)
-    throws UnsupportedFlavorException
-    {
+    public Node<GuiObject> getTransferData(DataFlavor flavor)
+    throws UnsupportedFlavorException {
       if (! isDataFlavorSupported(flavor))
-	throw new UnsupportedFlavorException(flavor);
+        throw new UnsupportedFlavorException(flavor);
       return data;
     }
 

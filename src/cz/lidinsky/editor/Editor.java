@@ -54,7 +54,7 @@ import control4j.gui.Screens;
 import control4j.gui.components.Screen;
 import control4j.gui.components.Circle;
 import control4j.gui.components.*;
-import control4j.gui.Writer;
+//import control4j.gui.Writer;
 import control4j.gui.changers.*;
 import control4j.gui.GuiObject;
 import control4j.gui.VisualObject;
@@ -67,6 +67,7 @@ import static control4j.tools.Logger.*;
 
 import cz.lidinsky.tools.tree.DFSIterator;
 import cz.lidinsky.tools.tree.Node;
+import cz.lidinsky.tools.CommonException;
 
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.collections4.PredicateUtils;
@@ -97,7 +98,7 @@ public class Editor
   private FileHandling file;
 
   private EditHandling edit;
-  private LayoutHandling layout;
+  //private LayoutHandling layout;
 
   /** filename that was given from the command line */
   private String filename;
@@ -133,7 +134,12 @@ public class Editor
             try {
               java.io.File file = new java.io.File(instance.filename);
               instance.file.load(file);
-            } catch (java.io.IOException e) { }
+            } catch (Exception e) {
+              throw new CommonException()
+                .setCause(e)
+                .set("message", "Exception while loading a file with gui!")
+                .set("file name", instance.filename);
+            }
           } else {
             instance.file.fileNew();
           }
@@ -203,7 +209,7 @@ public class Editor
     edit = new EditHandling(guiStructureTree);
 
     // Create layout handling class
-    layout = new LayoutHandling(guiStructureTree);
+    //layout = new LayoutHandling(guiStructureTree);
 
     // Add property editor table
     propertyTableModel = new KeyValueTableModel();
@@ -227,7 +233,7 @@ public class Editor
     // Edit menu
     edit.addMenu(menuBar);
     // Layout menu
-    layout.addMenu(menuBar);
+    //layout.addMenu(menuBar);
     // Structure manipulation menu
     menuBar.add(new JMenu("Structure"));
     menuBar.addItem("Add Screen", "STRUCTURE_ADD_SCREEN", this)
@@ -289,6 +295,7 @@ public class Editor
    */
   public void actionPerformed(ActionEvent e)
   {
+    /*
     // add new screen
     if (e.getActionCommand().equals("STRUCTURE_ADD_SCREEN"))
     {
@@ -305,14 +312,14 @@ public class Editor
     else if (e.getActionCommand().equals("STRUCTURE_MOVE_UP"))
       moveUp();
     else if (e.getActionCommand().equals("STRUCTURE_MOVE_DOWN"))
-      moveDown();
+      moveDown(); */
   }
 
   /**
    *  Deletes selected object.
    */
   protected void delete()
-  {
+  { /*
     if (!guiStructureTree.isSelectionEmpty())
     {
       TreePath[] selectionPaths = guiStructureTree.getSelectionPaths();
@@ -324,38 +331,7 @@ public class Editor
         parent.removeChild(index);
         //treeModel.fireTreeNodeRemoved(parent, node, index);
       }
-    }
-  }
-
-  /**
-   *  Main method which should be called to add new component.
-   */
-  private void addComponent()
-  {
-    // Is the editor in the appropriate mode ?
-    TreePath selectPath = guiStructureTree.getLeadSelectionPath();
-    if (selectPath == null) return;
-    if (selectPath.getPathCount() <= 1) return;
-    GuiObject selected
-      = (GuiObject)selectPath.getLastPathComponent();
-    if (! selected.isVisualContainer()) return;
-    VisualContainer container = (VisualContainer)selected;
-    // ask a user which component wants to add
-    String componentName = letSelectComponent();
-    if (componentName != null)
-    {
-      // create an instance of selected component
-      VisualObject component
-        = (VisualObject)ComponentFactory.getInstance()
-        .createInstance(componentName);
-      // add the component to the appropriate place
-      container.add(component);
-      //treeModel.fireTreeNodeInserted(component);
-      // end.
-      //component.setSize(component.getPreferredSize());
-      //component.revalidate();
-      //component.repaint();
-    }
+    } */
   }
 
   /**
@@ -363,6 +339,7 @@ public class Editor
    */
   private void addChanger()
   {
+    /*
     try
     {
       // Is the editor in the appropriate mode ?
@@ -384,7 +361,7 @@ public class Editor
     catch (ClassCastException e)
     {
       return;
-    }
+    } */
   }
 
   /**
@@ -395,16 +372,16 @@ public class Editor
    */
   private void moveUp()
   {
-    TreePath selectionPath = guiStructureTree.getLeadSelectionPath();
-    if (selectionPath == null) return;
-    GuiObject selection = (GuiObject)selectionPath.getLastPathComponent();
-    if (!selection.isVisual()) return;
-    VisualContainer parent = (VisualContainer)selection.getParent();
-    int index = parent.getIndexOfChild(selection);
-    if (index < 1) return;
-    parent.removeChild(index);
+    //TreePath selectionPath = guiStructureTree.getLeadSelectionPath();
+    //if (selectionPath == null) return;
+    //GuiObject selection = (GuiObject)selectionPath.getLastPathComponent();
+    //if (!selection.isVisual()) return;
+    //VisualContainer parent = (VisualContainer)selection.getParent();
+    //int index = parent.getIndexOfChild(selection);
+    //if (index < 1) return;
+    //parent.removeChild(index);
     //treeModel.fireTreeNodeRemoved(parent, selection, index);
-    parent.insert((VisualObject)selection, index - 1);
+    //parent.insert((VisualObject)selection, index - 1);
     //treeModel.fireTreeNodeInserted(selection);
   }
 
@@ -416,16 +393,16 @@ public class Editor
    */
   private void moveDown()
   {
-    TreePath selectionPath = guiStructureTree.getLeadSelectionPath();
-    if (selectionPath == null) return;
-    GuiObject selection = (GuiObject)selectionPath.getLastPathComponent();
-    if (!selection.isVisual()) return;
-    VisualContainer parent = (VisualContainer)selection.getParent();
-    int index = parent.getIndexOfChild(selection);
-    if (index >= parent.getVisualObjectCount() - 1) return;
-    parent.removeChild(index);
+    //TreePath selectionPath = guiStructureTree.getLeadSelectionPath();
+    //if (selectionPath == null) return;
+    //GuiObject selection = (GuiObject)selectionPath.getLastPathComponent();
+    //if (!selection.isVisual()) return;
+    //VisualContainer parent = (VisualContainer)selection.getParent();
+    //int index = parent.getIndexOfChild(selection);
+    //if (index >= parent.getVisualObjectCount() - 1) return;
+    //parent.removeChild(index);
     //treeModel.fireTreeNodeRemoved(parent, selection, index);
-    parent.insert((VisualObject)selection, index + 1);
+    //parent.insert((VisualObject)selection, index + 1);
     //treeModel.fireTreeNodeInserted(selection);
   }
 
