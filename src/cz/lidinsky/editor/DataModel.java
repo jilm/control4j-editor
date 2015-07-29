@@ -24,6 +24,8 @@ import control4j.gui.VisualContainer;
 import control4j.gui.Changer;
 import control4j.gui.Screens;
 
+import cz.lidinsky.tools.CommonException;
+import cz.lidinsky.tools.ExceptionCode;
 import cz.lidinsky.tools.tree.ChangeableNode;
 import cz.lidinsky.tools.tree.Node;
 
@@ -50,7 +52,11 @@ public class DataModel {
   public void addChild(Node<GuiObject> parent, Node<GuiObject> child) {
     // check that the parent is a node of this tree
     if (parent.getRoot() != root) {
-      throw new IllegalArgumentException();
+      throw new CommonException()
+        .setCode(ExceptionCode.ILLEGAL_ARGUMENT)
+        .set("message", "The parent node is not member of this tree!")
+        .set("parent", parent)
+        .set("child", child);
     }
     // add a child into the data structure
     GuiObject parentObject = parent.getDecorated();
@@ -77,7 +83,12 @@ public class DataModel {
 
   protected void check(GuiObject parent, GuiObject child) {
     if (!parent.isAssignable(child)) {
-      throw new IllegalArgumentException();
+      throw new CommonException()
+        .setCode(ExceptionCode.ILLEGAL_ARGUMENT)
+        .set("message",
+            "The given object cannot be a child of the given parent!")
+        .set("parent", parent)
+        .set("child", child);
     }
   }
 

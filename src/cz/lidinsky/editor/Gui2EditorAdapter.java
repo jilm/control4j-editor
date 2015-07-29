@@ -24,6 +24,9 @@ import control4j.gui.Screens;
 import control4j.gui.VisualObject;
 import control4j.gui.VisualContainer;
 import control4j.gui.Changer;
+import control4j.gui.components.Screen;
+
+import cz.lidinsky.tools.tree.Builder;
 
 import cz.lidinsky.tools.tree.Node;
 
@@ -42,7 +45,7 @@ public class Gui2EditorAdapter extends AbstractAdapter {
   }
 
   public void put(VisualObject object) {
-    handler.addChild(pointer, object);
+    pointer = handler.addChild(pointer, object);
   }
 
   public void put(VisualContainer container) {
@@ -55,6 +58,21 @@ public class Gui2EditorAdapter extends AbstractAdapter {
 
   public void put(Changer changer) {
     handler.addChild(pointer, changer);
+  }
+
+  //---------------------------------------------------------- Building a Tree.
+
+  private Builder<GuiObject> treeBuilder = new Builder<GuiObject>();
+
+  public void open() {
+    treeBuilder.open();
+  }
+
+  public void close(GuiObject object) {
+    Node<GuiObject> node = treeBuilder.close(object);
+    if (object instanceof Screen) {
+      handler.addChild(handler.getRoot(), node);
+    }
   }
 
 }
