@@ -63,8 +63,8 @@ public class AddComponent extends Action
     if (check()) {
       String componentName = Editor.getInstance().letSelectComponent();
       // create an instance of selected component
-      VisualObject component
-        = (VisualObject)ComponentFactory.getInstance()
+      GuiObject component
+        = ComponentFactory.getInstance()
         .createInstance(componentName);
       // add the component to the appropriate place
       Editor.getDataModel().addChild(
