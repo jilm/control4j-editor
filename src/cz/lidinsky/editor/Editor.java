@@ -452,15 +452,24 @@ public class Editor
     int[] indexes = e.getChildIndices();
     for (int i : indexes) {
       Node<GuiObject> child = parent.getChild(i);
-      if (child.getDecorated().isVisual()) {
-        JComponent visualComponent
-          = ((VisualObject)child.getDecorated()).getVisualComponent();
-        visualComponent.addMouseListener(componentToTreeLink);
-      }
+      setComponent2TreeLink(child);
     }
     // select last inserted node
     Node<GuiObject> child = parent.getChild(indexes[indexes.length-1]);
     guiStructureTree.setSelectionPath(parentPath.pathByAddingChild(child));
+  }
+
+  private void setComponent2TreeLink(Node<GuiObject> node) {
+    if (node.getDecorated().isVisual()) {
+      JComponent visualComponent
+        = ((VisualObject)node.getDecorated()).getVisualComponent();
+      if (visualComponent != null) {
+        visualComponent.addMouseListener(componentToTreeLink);
+        for (Node<GuiObject> child : node.getChildren()) {
+          setComponent2TreeLink(child);
+        }
+      }
+    }
   }
 
   public void treeNodesRemoved(TreeModelEvent e)
