@@ -62,7 +62,6 @@ import control4j.gui.VisualContainer;
 import control4j.gui.Changer;
 
 import control4j.scanner.Scanner;
-import control4j.scanner.KeyValueTableModel;
 import static control4j.tools.Logger.*;
 
 import cz.lidinsky.tools.tree.DFSIterator;
@@ -269,18 +268,17 @@ public class Editor
    *  <p>This method is listening tree selection event.
    */
   public void valueChanged(TreeSelectionEvent e) {
-    TreePath selectedPath = e.getNewLeadSelectionPath();
-    if (selectedPath != null) {
-      GuiObject selected
-        = ((Node<GuiObject>)selectedPath.getLastPathComponent()).getDecorated();
-      propertyTableModel.setData(Scanner.scanObject(selected));
+    GuiObject selected = guiStructureTree.getSelectedGO();
+    if (selected != null) {
+      propertyTableModel.setData(selected);
       // select appropriate selected screen
-      if (selectedPath.getPathCount() > 1) {
-        Screen screen
-          = (Screen)((Node<GuiObject>)selectedPath.getPathComponent(1))
-          .getDecorated();
-        ((Screens)treeModel.getRoot().getDecorated()).showScreen(screen);
-      }
+      //if (selectedPath.getPathCount() > 1) {
+        //Screen screen
+          //= (Screen)((Node<GuiObject>)selectedPath.getPathComponent(1))
+          //.getDecorated();
+        //((Screens)treeModel.getRoot().getDecorated()).showScreen(screen);
+      //}
+      // TODO:
     } else {
       propertyTableModel.setData(null);
     }

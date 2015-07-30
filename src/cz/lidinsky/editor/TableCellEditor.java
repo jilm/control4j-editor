@@ -1,7 +1,7 @@
 package cz.lidinsky.editor;
 
 /*
- *  Copyright 2013, 2014 Jiri Lidinsky
+ *  Copyright 2013, 2014, 2015 Jiri Lidinsky
  *
  *  This file is part of control4j.
  *
@@ -17,6 +17,12 @@ package cz.lidinsky.editor;
  *  You should have received a copy of the GNU General Public License
  *  along with control4j.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+import cz.lidinsky.tools.reflect.Setter;
+import cz.lidinsky.tools.reflect.ObjectMapDecorator;
+import cz.lidinsky.tools.reflect.ObjectMapUtils;
+
+import org.apache.commons.collections4.PredicateUtils;
 
 import java.lang.reflect.Method;
 import javax.swing.AbstractCellEditor;
@@ -40,8 +46,6 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import control4j.gui.Changer;
-import control4j.scanner.KeyValueTableModel;
-import control4j.scanner.Setter;
 
 /**
  *  Choose and return appropriate edit component, for property table.
@@ -191,15 +195,33 @@ implements javax.swing.table.TableCellEditor, ActionListener, TreeSelectionListe
     }
   }
 
-  private void fillComboBox(Object object, Class _class)
-  {
+  /**
+   *  It fills combo box for a chenger property. It fills the keys
+   *  of the parent component.
+   *
+   *  @param object
+   *             a parent object of the changer
+   *
+   *  @param _class
+   *             a data type
+   */
+  private void fillComboBox(Object object, Class _class) {
+    // initialize object map
+    ObjectMapDecorator<Object> map
+      = new ObjectMapDecorator<Object>(Object.class)
+      .setGetterFilter(
+          PredicateUtils.falsePredicate())
+      .setSetterFilter(
+          PredicateUtils.allPredicate(
+            ObjectMapUtils.hasAnnotationPredicate(Setter.class),
+            ObjectMapUtils.getSetterDataTypeCheckPredicate(_class)))
+      .setSetterKeyTransformer(
+          ObjectMapUtils.getSetterKeyTransformer());
+    map.setDecorated(object);
+    // fill in the keys
     comboBox.removeAllItems();
-    control4j.scanner.MethodIterator methods
-      = new control4j.scanner.MethodIterator(object, Setter.class, _class);
-    for (Method method : methods)
-    {
-      Setter setter = method.getAnnotation(Setter.class);
-      comboBox.addItem(setter.key());
+    for (String key : map.keySet()) {
+      comboBox.addItem(key);
     }
   }
 
