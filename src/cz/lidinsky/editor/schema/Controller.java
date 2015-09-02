@@ -23,6 +23,8 @@ import static cz.lidinsky.tools.Validate.notNull;
 import cz.lidinsky.tools.CommonException;
 import cz.lidinsky.tools.ExceptionCode;
 
+import java.awt.datatransfer.Transferable;
+import java.awt.dnd.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Point2D;
@@ -43,7 +45,8 @@ import java.util.Set;
  *    <li> Wire is painted.
  *  </ol>
  */
-class Controller implements MouseMotionListener {
+class Controller
+implements MouseMotionListener, DragGestureListener, DropTargetListener {
 
   // data model
   private Schema schema;
@@ -53,11 +56,19 @@ class Controller implements MouseMotionListener {
 
   private Status status;
 
+  /**
+   *  Initialization.
+   */
   public Controller(SchemaDrawing view, Schema model) {
     this.view = notNull(view);
     this.schema = notNull(model);
     this.view.addMouseMotionListener(this);
     this.status = new Status();
+    // Drag and Drop support
+    new java.awt.dnd.DragSource()
+      .createDefaultDragGestureRecognizer(
+          view, java.awt.dnd.DnDConstants.ACTION_MOVE, this);
+    new DropTarget(view, java.awt.dnd.DnDConstants.ACTION_MOVE, this, true, null);
   }
 
   /**
@@ -106,6 +117,70 @@ class Controller implements MouseMotionListener {
     for (StatusListener listener : statusListeners) {
       listener.onHighlightChange(component);
     }
+  }
+
+  //--------------------------------------------------- Drag and Drop Handling.
+
+  private class Dragged extends Status implements DragSourceListener {
+
+    public void dragDropEnd(DragSourceDropEvent event) {
+    }
+
+    public void dragEnter(DragSourceDragEvent event) {
+    }
+
+    public void dragExit(DragSourceEvent event) {
+    }
+
+    public void dragOver(DragSourceDragEvent event) {
+    }
+
+    public void dropActionChanged(DragSourceDragEvent event) {
+    }
+  }
+
+  @Override
+  public void dragEnter(DropTargetDragEvent event) { }
+
+  @Override
+  public void dragExit(DropTargetEvent event) { }
+
+  @Override
+  public void dragOver(DropTargetDragEvent event) { }
+
+  @Override
+  public void drop(DropTargetDropEvent event) {
+    try {
+    event.acceptDrop(event.getDropAction());
+    Point2D targetPoint = view.screen2schema(event.getLocation());
+    float dx = (float)(targetPoint.getX() - dragSourcePoint.getX());
+    float dy = (float)(targetPoint.getY() - dragSourcePoint.getY());
+    Transferable transferable = event.getTransferable();
+    Component component = (Component)transferable.getTransferData(
+        transferable.getTransferDataFlavors()[0]);
+    component.move((int)dx, (int)dy);
+    event.dropComplete(true);
+    view.repaint(view.getBounds());
+    System.out.println("drop");
+    } catch (Exception e) {
+    }
+  }
+
+  @Override
+  public void dropActionChanged(DropTargetDragEvent event) {}
+
+  private Point2D dragSourcePoint;
+
+  /**
+   *  Listener to the drag gesture recognizer.
+   */
+  @Override
+  public void dragGestureRecognized(DragGestureEvent event) {
+    System.out.println("Geture recognized"); // TODO:
+    // Starts the drag
+    dragSourcePoint = view.screen2schema(event.getDragOrigin());
+    event.getDragSource().startDrag(
+        event, null, new DragHandler(highlited), new Dragged());
   }
 
   //-------------------------------------------------------------------- Debug.

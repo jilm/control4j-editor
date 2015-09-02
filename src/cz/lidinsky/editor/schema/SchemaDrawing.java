@@ -33,11 +33,14 @@ import java.awt.geom.Point2D;
 import javax.swing.JComponent;
 
 /**
- *  Schema swing component; it is responsible for painting the schema and for user manipulation handling.
+ *  Schema swing component; it is responsible for painting the schema.
  *
  */
 public class SchemaDrawing extends JComponent {
 
+  /**
+   *  Component initialization.
+   */
   public SchemaDrawing(Schema<?> schema) {
     this.schema = notNull(schema);
     setPreferredSize(new Dimension(500, 500));
@@ -72,6 +75,10 @@ public class SchemaDrawing extends JComponent {
       // should not happen
       throw new AssertionError();
     }
+  }
+
+  Point2D screen2schema(Point2D point) {
+    return screen2schema((float)point.getX(), (float)point.getY());
   }
 
   @Override
