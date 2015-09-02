@@ -154,4 +154,6 @@ public class SchemaDrawing extends JComponent {
     }
   }
 
+  //--------------------------------------------------------------- Popup Menu.
+
 }

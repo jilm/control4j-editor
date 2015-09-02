@@ -26,6 +26,8 @@ import cz.lidinsky.tools.ExceptionCode;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Point2D;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  *  This class may be in the following states:
@@ -85,10 +87,25 @@ class Controller implements MouseMotionListener {
     boolean changed = highlited != component;
     if (changed) {
       view.highlite(component);
+      fireHighlightChange(component);
     }
     highlited = component;
     // status dependent action
     status.mouseMoved(e);
+  }
+
+  //----------------------------------------------------------- Event Handling.
+
+  private Set<StatusListener> statusListeners = new HashSet<StatusListener>();
+
+  public void addStatusListener(StatusListener listener) {
+    statusListeners.add(notNull(listener));
+  }
+
+  private void fireHighlightChange(Component component) {
+    for (StatusListener listener : statusListeners) {
+      listener.onHighlightChange(component);
+    }
   }
 
   //-------------------------------------------------------------------- Debug.
@@ -106,6 +123,11 @@ class Controller implements MouseMotionListener {
     frame.getContentPane().add(view);
     frame.pack();
     frame.setVisible(true);
+    javax.swing.JPopupMenu popup = new javax.swing.JPopupMenu();
+    javax.swing.Action action = new RotateAction();
+    popup.add(action);
+    controller.addStatusListener((StatusListener)action);
+    view.setComponentPopupMenu(popup);
   }
 
 }
