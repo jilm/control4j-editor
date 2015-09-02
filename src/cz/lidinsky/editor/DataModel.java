@@ -31,18 +31,32 @@ import cz.lidinsky.tools.tree.Node;
 
 import javax.swing.JComponent;
 import java.awt.Container;
+import java.awt.dnd.DragSource;
+import java.awt.dnd.DnDConstants;
 
+/**
+ *  Data model of the GUI application. Contains only visual objects, containers
+ *  and changers. These objects form the tree structure.
+ */
 public class DataModel {
 
+  /** The root node of the tree. */
   protected ChangeableNode<GuiObject> root;
 
   public static final String LINK_KEY = "JComponentToNodeLink";
 
+  /**
+   *  Creates the root node and creates and assigns new instance of Screens
+   *  class into it.
+   */
   public DataModel() {
     root = new ChangeableNode<GuiObject>();
     root.setDecorated(new Screens());
   }
 
+  /**
+   *  Returns the root node of the tree.
+   */
   public Node<GuiObject> getRoot() {
     return root;
   }
@@ -182,7 +196,13 @@ public class DataModel {
       getVO(node).configureVisualComponent();
       for (Node<GuiObject> child : node.getChildren()) {
         try {
-          getJC(node).add(createVisualComponent(child));
+          JComponent jc = getJC(node);
+          jc.add(createVisualComponent(child));
+          jc.setTransferHandler(new VisualObjectTransferHandler());
+          DragSource.getDefaultDragSource().createDefaultDragGestureRecognizer(
+              jc,
+              DnDConstants.ACTION_MOVE,
+              null);
           configureVisualComponent(child);
         } catch (ClassCastException e) {
           // this is OK, component is just not visual
@@ -224,6 +244,10 @@ public class DataModel {
 
   public static JComponent getJC(Node<GuiObject> node) {
     return getVO(node).getVisualComponent();
+  }
+
+  public static Node<GuiObject> getNode(JComponent component) {
+    return (Node<GuiObject>)component.getClientProperty(LINK_KEY);
   }
 
 }

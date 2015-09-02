@@ -1,5 +1,3 @@
-package cz.lidinsky.editor;
-
 /*
  *  Copyright 2013, 2014, 2015 Jiri Lidinsky
  *
@@ -17,6 +15,8 @@ package cz.lidinsky.editor;
  *  You should have received a copy of the GNU General Public License
  *  along with control4j.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+package cz.lidinsky.editor;
 
 import java.util.HashMap;
 import java.util.Properties;
@@ -78,7 +78,6 @@ import org.apache.commons.collections4.PredicateUtils;
  */
 public class Editor
   implements
-    ActionListener,
     TreeSelectionListener,
     TreeModelListener,
     FileListener {
@@ -117,7 +116,7 @@ public class Editor
   public static void main(String[] args) throws Exception {
     // create an instance of the editor
     instance = new Editor();
-    // load setting file
+    // load settings file
     java.io.InputStream settingsIS
       = instance.getClass().getResourceAsStream(settingsFilename);
     instance.settings.load(settingsIS);
@@ -157,12 +156,15 @@ public class Editor
   }
 
   /**
-   *
+   *  Returns instance of this class.
    */
   public static Editor getInstance() {
     return instance;
   }
 
+  /**
+   *  Returns the root frame of the editor window.
+   */
   public static JFrame getMainFrame() {
     return instance.frame;
   }
@@ -231,18 +233,6 @@ public class Editor
     frame.setJMenuBar(menuBar);
     // Edit menu
     edit.addMenu(menuBar);
-    // Layout menu
-    //layout.addMenu(menuBar);
-    // Structure manipulation menu
-    menuBar.add(new JMenu("Structure"));
-    menuBar.addItem("Add Screen", "STRUCTURE_ADD_SCREEN", this)
-           .addItem("Add Component", "STRUCTURE_ADD_COMPONENT", this)
-           .addItem("Add Changer", "STRUCTURE_ADD_CHANGER", this)
-           .addSeparator()
-           .addItem("Delete", "STRUCTURE_DELETE", this)
-           .addSeparator()
-           .addItem("Move Up", "STRUCTURE_MOVE_UP", this)
-           .addItem("Move Down", "STRUCTURE_MOVE_DOWN", this);
   }
 
   /**
@@ -286,122 +276,6 @@ public class Editor
     if (propertyTable.isEditing()) {
       propertyTable.getCellEditor().cancelCellEditing();
     }
-  }
-
-  /**
-   *  Listener method for all the menu items.
-   */
-  public void actionPerformed(ActionEvent e)
-  {
-    /*
-    // add new screen
-    if (e.getActionCommand().equals("STRUCTURE_ADD_SCREEN"))
-    {
-      Screen newScreen = new Screen();
-      //screens.add(newScreen);
-      //treeModel.fireTreeNodeInserted(newScreen);
-    }
-    else if (e.getActionCommand().equals("STRUCTURE_DELETE"))
-      delete();
-    else if (e.getActionCommand().equals("STRUCTURE_ADD_COMPONENT"))
-      addComponent();
-    else if (e.getActionCommand().equals("STRUCTURE_ADD_CHANGER"))
-      addChanger();
-    else if (e.getActionCommand().equals("STRUCTURE_MOVE_UP"))
-      moveUp();
-    else if (e.getActionCommand().equals("STRUCTURE_MOVE_DOWN"))
-      moveDown(); */
-  }
-
-  /**
-   *  Deletes selected object.
-   */
-  protected void delete()
-  { /*
-    if (!guiStructureTree.isSelectionEmpty())
-    {
-      TreePath[] selectionPaths = guiStructureTree.getSelectionPaths();
-      for (TreePath path : selectionPaths)
-      {
-        GuiObject node = (GuiObject)path.getLastPathComponent();
-        VisualObject parent = (VisualObject)node.getParent();
-        int index = parent.getIndexOfChild(node);
-        parent.removeChild(index);
-        //treeModel.fireTreeNodeRemoved(parent, node, index);
-      }
-    } */
-  }
-
-  /**
-   *
-   */
-  private void addChanger()
-  {
-    /*
-    try
-    {
-      // Is the editor in the appropriate mode ?
-      TreePath selectPath = guiStructureTree.getLeadSelectionPath();
-      if (selectPath == null) return;
-      if (!((GuiObject)selectPath.getLastPathComponent()).isVisual()) return;
-      VisualObject selected = (VisualObject)selectPath.getLastPathComponent();
-      // ask a user which component wants to add
-      String name = letSelectChanger();
-      if (name != null)
-      {
-        // create an instance of selected component
-        Changer changer = ChangerFactory.getInstance().createInstance(name);
-        // add the component to the appropriate place
-        selected.add(changer);
-        //treeModel.fireTreeNodeInserted(changer);
-      }
-    }
-    catch (ClassCastException e)
-    {
-      return;
-    } */
-  }
-
-  /**
-   *  Takes a selected gui object and moves it up. It means, that if some
-   *  visual container has tree children and the second is selected, before
-   *  this method is invoked, first and second child exchange theirs positions
-   *  afterwards.
-   */
-  private void moveUp()
-  {
-    //TreePath selectionPath = guiStructureTree.getLeadSelectionPath();
-    //if (selectionPath == null) return;
-    //GuiObject selection = (GuiObject)selectionPath.getLastPathComponent();
-    //if (!selection.isVisual()) return;
-    //VisualContainer parent = (VisualContainer)selection.getParent();
-    //int index = parent.getIndexOfChild(selection);
-    //if (index < 1) return;
-    //parent.removeChild(index);
-    //treeModel.fireTreeNodeRemoved(parent, selection, index);
-    //parent.insert((VisualObject)selection, index - 1);
-    //treeModel.fireTreeNodeInserted(selection);
-  }
-
-  /**
-   *  Takes a selected gui object and moves it down. It means, that if some
-   *  visual container has tree children and the second is selected, before
-   *  this method is invoked, socond and third child exchange theirs positions
-   *  afterwards.
-   */
-  private void moveDown()
-  {
-    //TreePath selectionPath = guiStructureTree.getLeadSelectionPath();
-    //if (selectionPath == null) return;
-    //GuiObject selection = (GuiObject)selectionPath.getLastPathComponent();
-    //if (!selection.isVisual()) return;
-    //VisualContainer parent = (VisualContainer)selection.getParent();
-    //int index = parent.getIndexOfChild(selection);
-    //if (index >= parent.getVisualObjectCount() - 1) return;
-    //parent.removeChild(index);
-    //treeModel.fireTreeNodeRemoved(parent, selection, index);
-    //parent.insert((VisualObject)selection, index + 1);
-    //treeModel.fireTreeNodeInserted(selection);
   }
 
   /**

@@ -1,5 +1,3 @@
-package cz.lidinsky.editor;
-
 /*
  *  Copyright 2013, 2014, 2015 Jiri Lidinsky
  *
@@ -18,8 +16,9 @@ package cz.lidinsky.editor;
  *  along with control4j.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+package cz.lidinsky.editor;
+
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.awt.Container;
 import java.awt.Component;
 import javax.swing.tree.TreePath;
@@ -35,16 +34,17 @@ import control4j.gui.VisualContainer;
 import control4j.gui.Screens;
 import control4j.gui.components.Screen;
 
+
 import cz.lidinsky.tools.tree.Node;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
- *
+ *  Adds a tree data model interface implementation to the DataModel.
  */
 public class TreeModel extends DataModel
 implements javax.swing.tree.TreeModel, FileListener {
-
-  private LinkedList<TreeModelListener> listeners
-    = new LinkedList<TreeModelListener>();
 
   /**
    *  Creates an empty model.
@@ -53,29 +53,14 @@ implements javax.swing.tree.TreeModel, FileListener {
     super();
   }
 
-  /**
-   *
-   */
-  public void addTreeModelListener(TreeModelListener l) {
-    if (l != null) {
-      listeners.add(l);
-    }
-  }
-
-  /**
-   *
-   */
-  public void removeTreeModelListener(TreeModelListener l) {
-    if (l != null) {
-      listeners.remove(l);
-    }
-  }
+  //-------------------------------------- Tree Model Interface Implementation.
 
   /**
    *  @param parent
    *             instance of a Node class is expected
    */
-  public Object getChild(Object parent, int index) {
+  @Override
+  public Node<GuiObject> getChild(Object parent, int index) {
     return ((Node<GuiObject>)parent).getChild(index);
   }
 
@@ -101,13 +86,6 @@ implements javax.swing.tree.TreeModel, FileListener {
   }
 
   /**
-   *  Returns Screens object.
-   */
-  //public Object getRoot() {
-    //return root;
-  //}
-
-  /**
    *
    */
   public boolean isLeaf(Object node) {
@@ -125,6 +103,29 @@ implements javax.swing.tree.TreeModel, FileListener {
     //fireTreeStructureChanged(root);
   }
 
+  //----------------------------------------------------------- Event Handling.
+
+  /** Event listeners. */
+  private Set<TreeModelListener> listeners = new HashSet<TreeModelListener>();
+
+  /**
+   *  Add an event listener.
+   */
+  public void addTreeModelListener(TreeModelListener l) {
+    if (l != null) {
+      listeners.add(l);
+    }
+  }
+
+  /**
+   *  Removes the given listener.
+   */
+  public void removeTreeModelListener(TreeModelListener l) {
+    if (l != null) {
+      listeners.remove(l);
+    }
+  }
+
   /**
    *  Notify all of the registered listeners, that a node was added.
    *
@@ -140,6 +141,7 @@ implements javax.swing.tree.TreeModel, FileListener {
     for (TreeModelListener listener : listeners) {
       listener.treeNodesInserted(e);
     }
+    System.out.println(e.toString());
   }
 
   protected void fireTreeNodeChanged(Node<GuiObject> node) {
@@ -204,6 +206,8 @@ implements javax.swing.tree.TreeModel, FileListener {
   public void fileChanged(FileEvent e) {
     //setRoot(e.getScreens());
   }
+
+  //------------------------ Override Data Model Public Methods to Fire Events.
 
   @Override
   public void addChild(Node<GuiObject> parent, Node<GuiObject> child) {
