@@ -24,6 +24,7 @@ import cz.lidinsky.tools.CommonException;
 import cz.lidinsky.tools.ExceptionCode;
 import cz.lidinsky.tools.swing.Transform;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -126,6 +127,7 @@ public class SchemaDrawing extends JComponent {
     Graphics2D localG = new Transform(g.create())
       .concat(component.getTransform())
       .getGraphics();
+    localG.setStroke(new BasicStroke((float)screen2schema(1f, 1f).getX()));
     symbol.paint(localG);
     localG.dispose();
   }

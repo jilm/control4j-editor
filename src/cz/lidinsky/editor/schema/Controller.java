@@ -185,7 +185,7 @@ implements MouseMotionListener, DragGestureListener, DropTargetListener {
 
   //-------------------------------------------------------------------- Debug.
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
     javax.swing.JFrame frame = new javax.swing.JFrame("Schema demo");
     frame.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
     Schema model = new Schema();
@@ -193,6 +193,12 @@ implements MouseMotionListener, DragGestureListener, DropTargetListener {
       .move(2, 3)
       .rotate(1);
     model.add(resistor);
+
+    SymbolLibrary library = new SymbolLibrary();
+    library.load(new java.io.File("symbols.xml"));
+    Component line = new Component(library.get("resistor"));
+    model.add(line);
+
     SchemaDrawing view = new SchemaDrawing(model);
     Controller controller = new Controller(view, model);
     frame.getContentPane().add(view);
