@@ -23,14 +23,17 @@ import static cz.lidinsky.tools.Validate.notNull;
 import cz.lidinsky.tools.CommonException;
 import cz.lidinsky.tools.ExceptionCode;
 import cz.lidinsky.tools.swing.Transform;
+import cz.lidinsky.tools.swing.AffineTransform;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.geom.AffineTransform;
+import java.awt.Shape;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.geom.Line2D;
 import javax.swing.JComponent;
 
 /**
@@ -52,68 +55,71 @@ public class SchemaDrawing extends JComponent {
 
   private Schema<?> schema;
 
-  //-------------------------------------------------------------------- Paint.
 
   /** Grid size in pixels. */
   private int gridSize = 20;
+
+  private void update() {
+    schema2screen.scale((double)gridSize, (double)gridSize);
+    screen2schema.scale(1d / (double)gridSize, 1d / (double)gridSize);
+  }
+
+  //----------------------------------------------- Coordinate Transformations.
 
   /**
    *  This transformation scales the coordinate system to fit the grid size.
    *  This transformation transforms from the schema coordinates to the screen
    *  coordinate system.
    */
-  private AffineTransform transform = new AffineTransform();
+  private AffineTransform schema2screen = new AffineTransform();
 
-  private void update() {
-    transform.scale((double)gridSize, (double)gridSize);
+  private AffineTransform screen2schema = new AffineTransform();
+
+  AffineTransform screen2schema() {
+    return screen2schema;
   }
 
-  Point2D screen2schema(float x, float y) {
-    try {
-      Point2D point = new Point2D.Float(x, y);
-      return transform.inverseTransform(point, point);
-    } catch (java.awt.geom.NoninvertibleTransformException e) {
-      // should not happen
-      throw new AssertionError();
-    }
+  AffineTransform schema2screen() {
+    return schema2screen;
   }
 
-  Point2D screen2schema(Point2D point) {
-    return screen2schema((float)point.getX(), (float)point.getY());
-  }
+  //-------------------------------------------------------------------- Paint.
 
   @Override
   protected void paintComponent(Graphics g) {
     // paint background
     // paint grid
-    Graphics2D localG = (Graphics2D)g.create();
-    paintGrid(localG);
-    localG.dispose();
+    paintGrid(g);
     // paint components
+    Graphics2D schemaG = new Transform(g.create())
+      .concat(schema2screen)
+      .getGraphics();
+    schemaG.setColor(Color.BLACK);
     for (Component component : schema.getComponents()) {
-      localG = new Transform(g.create())
-        .concat(transform)
-        .getGraphics();
-      if (component == highlited) {
-        localG.setColor(Color.RED);
-        paintHighlitedComponent(localG, component);
-      } else {
-        localG.setColor(Color.BLACK);
-        paintComponent(localG, component);
-      }
-      localG.dispose();
+      paintComponent(schemaG, component);
     }
-    // paint wires
+    // pint highlighted component
+    if (highlighted != null) {
+      paintHighlitedComponent(schemaG, highlighted);
+    }
+    // paint highlighted terminal
+    if (highlightedTerminal != null) {
+      paintHighlightedTerminal(
+          schemaG, highlightedTerminal.getX(), highlightedTerminal.getY());
+    }
+    schemaG.dispose();
   }
 
   protected void paintGrid(Graphics g) {
-    g.setColor(Color.LIGHT_GRAY);
+    Graphics localG = g.create();
+    localG.setColor(Color.LIGHT_GRAY);
     for (int x = 0; x < getWidth(); x += gridSize) {
-      g.drawLine(x, 0, x, getHeight());
+      localG.drawLine(x, 0, x, getHeight());
     }
     for (int y = 0; y < getHeight(); y += gridSize) {
-      g.drawLine(0, y, getWidth(), y);
+      localG.drawLine(0, y, getWidth(), y);
     }
+    localG.dispose();
   }
 
   /**
@@ -127,7 +133,9 @@ public class SchemaDrawing extends JComponent {
     Graphics2D localG = new Transform(g.create())
       .concat(component.getTransform())
       .getGraphics();
-    localG.setStroke(new BasicStroke((float)screen2schema(1f, 1f).getX()));
+    localG.setStroke(
+        new BasicStroke((float)screen2schema.transform(1f, 1f).getX()));
+    localG.setColor(Color.BLACK);
     symbol.paint(localG);
     localG.dispose();
   }
@@ -138,29 +146,60 @@ public class SchemaDrawing extends JComponent {
     Graphics2D localG = new Transform(g.create())
       .concat(component.getTransform())
       .getGraphics();
+    localG.setStroke(
+        new BasicStroke((float)screen2schema.transform(1f, 1f).getX()));
+    localG.setColor(Color.RED);
     symbol.paint(localG);
-    //new Transform(g).scale(1 / 100d);
+    // paint terminals of the highlighted component
     for (Terminal terminal : symbol.getTerminals()) {
       paintTerminal(localG, terminal.getX(), terminal.getY());
-      System.out.println(localG.getTransform().toString());
-      System.out.println(" " + terminal.getX() + " " + terminal.getY());
     }
     localG.dispose();
   }
 
+  private Shape terminalShape = new Rectangle2D.Float(-0.2f, -0.2f, 0.4f, 0.4f);
+
   protected void paintTerminal(Graphics g, int x, int y) {
-    g.drawRect(x * 100 - 20, y * 100 - 20, 40, 40);
+    Graphics2D localG = new Transform(g.create())
+      .translate(x, y)
+      .getGraphics();
+    localG.setColor(Color.RED);
+    localG.draw(terminalShape);
+    localG.dispose();
+  }
+
+  protected void paintHighlightedTerminal(Graphics g, int x, int y) {
+    Graphics2D localG = new Transform(g.create())
+      .translate(x, y)
+      .getGraphics();
+    localG.setColor(Color.RED);
+    localG.fill(terminalShape);
+    localG.dispose();
   }
 
   //---------------------------------------------------------------- Selection.
 
-  private Component highlited;
+  private Component highlighted;
 
   void highlite(Component component) {
-    if (highlited != component) {
-      highlited = component;
+    if (highlighted != component) {
+      highlighted = component;
       repaint(getBounds());
     }
+  }
+
+  private Terminal highlightedTerminal;
+
+  void setHighlighted(Terminal terminal) {
+    highlightedTerminal = terminal;
+  }
+
+  /**
+   *  Returns the terminal shape in the component coordinates.
+   */
+  Shape getShape(Component component, Terminal terminal) {
+    return schema2screen.concat(component.getTransform())
+      .createTransformedShape(terminalShape);
   }
 
   //--------------------------------------------------------------- Popup Menu.

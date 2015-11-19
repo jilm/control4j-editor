@@ -25,9 +25,11 @@ import cz.lidinsky.tools.ExceptionCode;
 
 import java.awt.datatransfer.Transferable;
 import java.awt.dnd.*;
+import java.awt.Shape;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -92,17 +94,92 @@ implements MouseMotionListener, DragGestureListener, DropTargetListener {
    *  Highlits components under the mouse cursor.
    */
   public void mouseMoved(MouseEvent e) {
-    // highlits component under the cursor
-    Point2D point = view.screen2schema(e.getX(), e.getY());
-    Component component = schema.getComponent(point);
-    boolean changed = highlited != component;
-    if (changed) {
-      view.highlite(component);
-      fireHighlightChange(component);
-    }
-    highlited = component;
+    highlightStatus.mouseMoved(e);
     // status dependent action
     status.mouseMoved(e);
+  }
+
+  //----------------------------------------------- A Component is Highlighted.
+
+  private HighlightStatus highlightStatus = new HighlightStatus();
+
+  /**
+   *  Initial status - nothing is highlighted.
+   */
+  private class HighlightStatus {
+
+    public void mouseMoved(MouseEvent e) {
+      // highlits component under the cursor
+      Point2D point = view.screen2schema().transform(e.getX(), e.getY());
+      Component component = schema.getComponent(point);
+      if (component != null) {
+        highlightStatus = new ComponentHighlightedStatus(component);
+        view.highlite(component);
+        fireHighlightChange(component);
+      }
+    }
+
+  }
+
+  private class ComponentHighlightedStatus extends HighlightStatus {
+
+    private Component highlighted;
+
+    ComponentHighlightedStatus(Component component) {
+      highlighted = component;
+    }
+
+    public void mouseMoved(MouseEvent e) {
+      Point2D point = view.screen2schema().transform(e.getX(), e.getY());
+      // test if some of the terminals is highlighted
+      for (Terminal terminal : highlighted.getSymbol().getTerminals()) {
+        if (point.getX() > (float)terminal.getX() - 0.2f
+            && point.getX() < (float)terminal.getX() + 0.2f
+            && point.getY() > (float)terminal.getY() - 0.2f
+            && point.getY() < (float)terminal.getY() + 0.2f) {
+          highlightStatus = new TerminalHighlightedStatus(
+              highlighted, terminal);
+          return;
+        }
+      }
+      // test whether the highlighted component has changed
+      Component component = schema.getComponent(point);
+      if (component == null) {
+        highlightStatus = new HighlightStatus();
+        view.highlite(component);
+        fireHighlightChange(component);
+      } else if (component != highlighted) {
+        highlighted = component;
+        view.highlite(component);
+        fireHighlightChange(component);
+      }
+    }
+
+  }
+
+  /**
+   *  Some component terminal is highlighted.
+   */
+  private class TerminalHighlightedStatus extends HighlightStatus {
+
+    Terminal highlited;
+
+    private Shape terminalShape;
+
+    TerminalHighlightedStatus(Component component, Terminal terminal) {
+      highlited = terminal;
+      terminalShape = view.getShape(component, terminal);
+      view.setHighlighted(terminal);
+      view.repaint(view.getBounds());
+    }
+
+    @Override
+    public void mouseMoved(MouseEvent e) {
+      if (!terminalShape.contains(e.getX(), e.getY())) {
+        highlightStatus = new HighlightStatus();
+      }
+    }
+
   }
 
   //----------------------------------------------------------- Event Handling.
@@ -152,7 +229,7 @@ implements MouseMotionListener, DragGestureListener, DropTargetListener {
   public void drop(DropTargetDropEvent event) {
     try {
     event.acceptDrop(event.getDropAction());
-    Point2D targetPoint = view.screen2schema(event.getLocation());
+    Point2D targetPoint = view.screen2schema().transform(event.getLocation());
     float dx = (float)(targetPoint.getX() - dragSourcePoint.getX());
     float dy = (float)(targetPoint.getY() - dragSourcePoint.getY());
     Transferable transferable = event.getTransferable();
@@ -178,7 +255,7 @@ implements MouseMotionListener, DragGestureListener, DropTargetListener {
   public void dragGestureRecognized(DragGestureEvent event) {
     System.out.println("Geture recognized"); // TODO:
     // Starts the drag
-    dragSourcePoint = view.screen2schema(event.getDragOrigin());
+    dragSourcePoint = view.screen2schema().transform(event.getDragOrigin());
     event.getDragSource().startDrag(
         event, null, new DragHandler(highlited), new Dragged());
   }
